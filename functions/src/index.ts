@@ -8,6 +8,9 @@ exports.getWordForNextDay = functions.pubsub
     .timeZone("Europe/Paris")
     .onRun(() => {
       const word = "trololo";
-      admin.firestore().collection("/word").doc(word).set({word});
+      admin.firestore()
+          .collection("words")
+          .doc((new Date().getDay() +1).toString())
+          .set({word});
       return null;
     });
