@@ -20,6 +20,7 @@ module.exports = {
   },
   ignorePatterns: [
     "/lib/**/*", // Ignore built files.
+    "words.ts",
   ],
   plugins: [
     "@typescript-eslint",
@@ -29,5 +30,4 @@ module.exports = {
     "quotes": ["error", "double"],
     "import/no-unresolved": 0,
   },
-  this.ignorePatterns: ['mots.ts']
 };
