@@ -1,7 +1,7 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import {words, wordsLength} from "./words";
-import {createHmac} from "crypto";
+// import {createHmac} from "crypto";
 
 admin.initializeApp();
 
@@ -37,9 +37,9 @@ const getWord = async () => {
   let word;
   do {
     word = words[Math.floor(Math.random() * wordsLength)];
-    word = createHmac("sha256", "justToNotSpoilMe")
-        .update(word)
-        .digest("hex");
+    // word = createHmac("sha256", "justToNotSpoilMe")
+    //    .update(word)
+    //    .digest("hex");
   } while (lastMonthWords.includes(word));
   return word;
 };
