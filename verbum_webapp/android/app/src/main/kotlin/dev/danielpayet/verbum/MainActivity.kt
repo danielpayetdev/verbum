@@ -1,4 +1,4 @@
-package com.example.verbum_webapp
+package dev.danielpayet.verbum
 
 import io.flutter.embedding.android.FlutterActivity
 
