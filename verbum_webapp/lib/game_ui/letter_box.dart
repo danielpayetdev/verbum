@@ -20,8 +20,6 @@ abstract class LetterBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 45.0,
-      height: 45.0,
       decoration: BoxDecoration(
         color: color,
         border: const Border(

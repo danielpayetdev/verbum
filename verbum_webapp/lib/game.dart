@@ -23,22 +23,22 @@ class _GameState extends State<Game> {
         } else if (game.isOver && !game.isWon) {
           return GameOver(stats: game.getStatistique());
         } else {
-          return Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Grille(wordGrid: game.wordGrid),
-                Keyboard(
-                  onKeyTap: (String letter) {
-                    game.typeLetter(letter);
-                  },
-                  onBackspaceTap: () => game.deleteLetter(),
-                  onSubmitTap: () => game.submit(),
-                ),
-              ],
-            ),
+          return Column(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Grille(wordGrid: game.wordGrid),
+              ),
+              Keyboard(
+                onKeyTap: (String letter) {
+                  game.typeLetter(letter);
+                },
+                onBackspaceTap: () => game.deleteLetter(),
+                onSubmitTap: () => game.submit(),
+              ),
+            ],
           );
         }
       },

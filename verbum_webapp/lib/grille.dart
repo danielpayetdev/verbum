@@ -9,7 +9,7 @@ class Grille extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Table(
-      border: TableBorder.all(color: Colors.white, width: 2.0),
+      border: TableBorder.all(color: Colors.white, width: 1.0),
       children: wordGrid.map((row) {
         return TableRow(
           children: row.map((cell) {
