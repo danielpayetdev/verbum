@@ -17,6 +17,9 @@ exports.setWordForNextDay = functions.pubsub
       return null;
     });
 
+/**
+ * @deprecated - use db acces instead
+ */
 exports.getWord = functions.https.onCall(async () => {
   const docs = await admin.firestore()
       .collection("words")
