@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:verbum_webapp/erreur_message.dart';
 import 'package:verbum_webapp/game/game.provider.dart';
 import 'package:verbum_webapp/game_win.dart';
 import 'package:verbum_webapp/game_over.dart';
@@ -17,26 +18,47 @@ class _GameState extends State<Game> {
   @override
   Widget build(BuildContext context) {
     return Consumer<GameProvider>(
-      builder: (context, game, child) {
-        if (game.isOver && game.isWon) {
-          return GameWin(stats: game.getStatistique());
-        } else if (game.isOver && !game.isWon) {
-          return GameOver(stats: game.getStatistique());
+      builder: (context, gameProvider, child) {
+        if (gameProvider.game!.isOver && gameProvider.game!.isWon) {
+          return GameWin(game: gameProvider.getState());
+        } else if (gameProvider.game!.isOver && !gameProvider.game!.isWon) {
+          return GameOver(game: gameProvider.getState());
         } else {
           return Column(
             mainAxisSize: MainAxisSize.max,
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Grille(wordGrid: game.wordGrid),
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text("en ${gameProvider.game!.word.length} lettres"),
+                          ),
+                        ],
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Grille(wordGrid: gameProvider.game!.wordGrid),
+                      ),
+                      const ErrorMessage(),
+                    ],
+                  ),
+                ),
               ),
-              Keyboard(
-                onKeyTap: (String letter) {
-                  game.typeLetter(letter);
-                },
-                onBackspaceTap: () => game.deleteLetter(),
-                onSubmitTap: () => game.submit(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 32),
+                child: Keyboard(
+                  onKeyTap: (String letter) {
+                    gameProvider.typeLetter(letter);
+                  },
+                  onBackspaceTap: () => gameProvider.deleteLetter(),
+                  onSubmitTap: () => gameProvider.submit(),
+                ),
               ),
             ],
           );

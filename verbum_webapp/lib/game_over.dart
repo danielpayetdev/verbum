@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:verbum_webapp/game/game.provider.dart';
+import 'package:verbum_webapp/game/game_state.dart';
 import 'package:verbum_webapp/grille.dart';
 
 class GameOver extends StatelessWidget {
-  final GameStats stats;
-  const GameOver({Key? key, required this.stats}) : super(key: key);
+  final GameState game;
+  const GameOver({Key? key, required this.game}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +32,7 @@ class GameOver extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Text(
-                  stats.word,
+                  game.word,
                   style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 ),
               ),
@@ -40,7 +40,7 @@ class GameOver extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Grille(wordGrid: stats.wordGrid),
+            child: Grille(wordGrid: game.wordGrid),
           ),
         ],
       ),

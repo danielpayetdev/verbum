@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:verbum_webapp/game/game.provider.dart';
+import 'package:verbum_webapp/game/game_state.dart';
+import 'package:verbum_webapp/game/letter.dart';
+import 'package:verbum_webapp/game/letter_status.dart';
 import 'package:verbum_webapp/game_ui/letter_box.dart';
 
 class Grille extends StatelessWidget {
@@ -22,17 +24,17 @@ class Grille extends StatelessWidget {
 
   LetterBox _getBox(Letter letter) {
     switch (letter.state) {
-      case Status.first:
+      case LetterStatus.first:
         return RedLetter(letter: letter.letter!);
-      case Status.typed:
+      case LetterStatus.typed:
         return BlueLetter(letter: letter.letter!);
-      case Status.tofound:
+      case LetterStatus.tofound:
         return const BlueLetter(letter: ".");
-      case Status.notInWord:
+      case LetterStatus.notInWord:
         return BlueLetter(letter: letter.letter!);
-      case Status.found:
+      case LetterStatus.found:
         return RedLetter(letter: letter.letter!);
-      case Status.almostFound:
+      case LetterStatus.almostFound:
         return YollowLetter(letter: letter.letter!);
       default:
         return const BlueLetter(letter: "");

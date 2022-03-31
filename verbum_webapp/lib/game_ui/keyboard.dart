@@ -50,11 +50,12 @@ class KeyTouch extends StatelessWidget {
         onTap: () => onTap(letter),
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+            padding: const EdgeInsets.only(top: 14.5, bottom: 14.5),
             child: Text(
               letter,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
+                fontSize: 20.0,
               ),
             ),
           ),

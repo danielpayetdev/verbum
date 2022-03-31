@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:verbum_webapp/game.dart';
 import 'package:verbum_webapp/game/game.provider.dart';
 import 'firebase_options.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,18 +14,38 @@ void main() async {
   runApp(const MyApp());
 }
 
+final darkNotifier = ValueNotifier<bool>(false);
+
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Verbum',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: const MyHomePage(title: 'Verbum'),
-    );
+    return FutureBuilder<bool>(
+        future: _isDarkModeFromPreferences(),
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            darkNotifier.value = snapshot.data!;
+          }
+          return ValueListenableBuilder<bool>(
+            valueListenable: darkNotifier,
+            builder: (BuildContext context, bool isDarkMode, Widget? child) {
+              return MaterialApp(
+                title: 'Verbum',
+                theme: ThemeData(
+                  primarySwatch: Colors.blue,
+                  brightness: isDarkMode ? Brightness.dark : Brightness.light,
+                ),
+                home: const MyHomePage(title: 'Verbum'),
+              );
+            },
+          );
+        });
+  }
+
+  Future<bool> _isDarkModeFromPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('darkMode') ?? false;
   }
 }
 
@@ -43,6 +64,16 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        actions: [
+          IconButton(
+            icon: Icon(darkNotifier.value ? Icons.brightness_7 : Icons.brightness_3),
+            onPressed: () async {
+              setState(() => darkNotifier.value = !darkNotifier.value);
+              final prefs = await SharedPreferences.getInstance();
+              prefs.setBool('darkMode', darkNotifier.value);
+            },
+          ),
+        ],
       ),
       body: ChangeNotifierProvider(
         create: (context) => GameProvider(),
@@ -60,8 +91,13 @@ class GameLauncher extends StatelessWidget {
     return FutureBuilder<void>(
         future: Provider.of<GameProvider>(context, listen: false).start(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
+          if (snapshot.connectionState == ConnectionState.done && snapshot.hasError == false) {
             return const Game();
+          }
+          if (snapshot.connectionState == ConnectionState.done && snapshot.hasError == true) {
+            return const Center(
+              child: Text('Oups ! Une erreur est survenue.'),
+            );
           } else {
             return Center(
               child: Column(

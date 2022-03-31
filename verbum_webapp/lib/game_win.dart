@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:verbum_webapp/game/game.provider.dart';
+import 'package:verbum_webapp/game/game_state.dart';
 import 'package:verbum_webapp/grille.dart';
 
 class GameWin extends StatelessWidget {
-  final GameStats stats;
-  const GameWin({Key? key, required this.stats}) : super(key: key);
+  final GameState game;
+  const GameWin({Key? key, required this.game}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +27,7 @@ class GameWin extends StatelessWidget {
               ),
               Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Text("Tu as trouvé en ${stats.nombreDeMot} mot${stats.nombreDeMot == 1 ? '' : 's'} !"),
+                child: Text("Tu as trouvé en ${game.currentRow + 1} mot${game.currentRow == 0 ? '' : 's'} !"),
               ),
             ],
           ),
@@ -45,7 +45,7 @@ class GameWin extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Text(
-                      stats.word,
+                      game.word,
                       style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                   ),
@@ -55,7 +55,7 @@ class GameWin extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: Grille(wordGrid: stats.wordGrid),
+            child: Grille(wordGrid: game.wordGrid),
           ),
         ],
       ),

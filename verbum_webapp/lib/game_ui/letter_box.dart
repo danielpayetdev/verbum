@@ -19,24 +19,20 @@ abstract class LetterBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
+    return AspectRatio(
+      aspectRatio: 1.0,
+      child: Container(
         color: color,
-        border: const Border(
-          top: BorderSide(width: 1.0, color: Colors.white),
-          left: BorderSide(width: 1.0, color: Colors.white),
-          bottom: BorderSide(width: 1.0, color: Colors.white),
-          right: BorderSide(width: 1.0, color: Colors.white),
-        ),
-      ),
-      child: Center(
-        child: Text(
-          letter,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 26.0,
-            fontWeight: FontWeight.bold,
+        child: Align(
+          alignment: Alignment.center,
+          child: Text(
+            letter,
+            textScaleFactor: 1.0,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24.0,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ),
       ),

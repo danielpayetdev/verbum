@@ -1,142 +1,153 @@
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/material.dart';
-
-typedef GameGrid = List<List<Letter>>;
-
-class GameStats {
-  final String word;
-  final int nombreDeMot;
-  final GameGrid wordGrid;
-
-  GameStats(this.word, this.nombreDeMot, this.wordGrid);
-}
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:verbum_webapp/game/game_state.dart';
+import 'package:verbum_webapp/game/letter.dart';
+import 'package:verbum_webapp/game/letter_status.dart';
 
 const int numberOfRows = 6;
 
 class GameProvider extends ChangeNotifier {
-  String word = "";
-  GameGrid wordGrid = [];
-  int currentLetter = 1;
-  int currentRow = 0;
-  List<int> letterFinds = [];
-  List<int> letterAlmostFinds = [];
-  List<String> notInWord = [];
-  bool isOver = false;
-  bool isWon = false;
+  GameState? game;
+  var error$ = StreamController<String>.broadcast();
 
   Future start() async {
-    word = await _getWord();
-    wordGrid = initWordGrid();
-    currentLetter = 1;
-    currentRow = 0;
-    letterFinds = [];
-    letterAlmostFinds = [];
-    notInWord = [];
-    isOver = false;
-    isWon = false;
-  }
-
-  GameGrid initWordGrid() {
-    return List.generate(
-      numberOfRows,
-      (index) => List.generate(
-        word.length,
-        (index2) {
-          if (index == 0) {
-            if (index2 == 0) {
-              return Letter(letter: word.characters.first, state: Status.first);
-            } else {
-              return Letter(state: Status.tofound);
-            }
-          } else {
-            return Letter(state: Status.clear);
-          }
-        },
-      ),
-    );
+    var datas = await Future.wait([SharedPreferences.getInstance(), _getWord(), _getAcceptableWords()]);
+    final prefs = datas[0] as SharedPreferences;
+    final wordFromBdd = datas[1] as String;
+    var gameFromPrefs = prefs.getString("game");
+    if (gameFromPrefs != null) {
+      try {
+        GameState _game;
+        dynamic json = jsonDecode(gameFromPrefs);
+        _game = GameState.fromJson(json);
+        if (_game.word == wordFromBdd) {
+          game = _game;
+          game!.acceptableWords = await _getAcceptableWords();
+          notifyListeners();
+          return;
+        } else {
+          await prefs.remove("game");
+        }
+      } on Exception catch (_) {
+        await prefs.remove("game");
+      }
+    }
+    game = GameState(word: datas[1] as String, acceptableWords: datas[2] as List<String>);
   }
 
   Future<String> _getWord() async {
-    HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('getWord');
-    final results = await callable();
-    return results.data;
+    CollectionReference collection = FirebaseFirestore.instance.collection('words');
+    final docLast = await collection.orderBy("day").limitToLast(1).get();
+    return docLast.docs.map((d) => d.get("word")).first;
+  }
+
+  Future<List<String>> _getAcceptableWords() async {
+    HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('getAcceptableWords');
+    final results = await callable.call<List<Object?>>();
+    return results.data.map((d) => d.toString()).toList();
   }
 
   void typeLetter(String letter) {
-    if (currentLetter < word.length) {
-      var letterBox = wordGrid[currentRow][currentLetter];
+    if (game!.currentLetter < game!.word.length) {
+      var letterBox = game!.wordGrid[game!.currentRow][game!.currentLetter];
       letterBox.letter = letter;
-      letterBox.state = Status.typed;
-      currentLetter++;
+      letterBox.state = LetterStatus.typed;
+      game!.currentLetter++;
       notifyListeners();
     }
   }
 
   void deleteLetter() {
-    if (currentLetter > 1) {
-      var letterBox = wordGrid[currentRow][currentLetter - 1];
+    if (game!.currentLetter > 1) {
+      var letterBox = game!.wordGrid[game!.currentRow][game!.currentLetter - 1];
       letterBox.letter = "";
-      letterBox.state = Status.tofound;
-      currentLetter--;
+      letterBox.state = LetterStatus.tofound;
+      game!.currentLetter--;
       notifyListeners();
     }
   }
 
   void submit() {
-    if (currentLetter == word.length) {
-      var row = wordGrid[currentRow];
-      Map<String, int> letterFinds = {};
-      for (var i = 0; i < row.length; i++) {
-        if (row[i].letter == word[i]) {
-          row[i].state = Status.found;
-          letterFinds.update(row[i].letter!, (value) => value + 1, ifAbsent: () => 1);
-          for (var element in wordGrid[currentRow]) {
-            if(element.letter == row[i].letter && element.state == Status.almostFound) {
-              element.state = Status.notInWord;
-              break;
-            }
-          }
-        } else if (_isAlmostFound(row[i], letterFinds)) {
-          row[i].state = Status.almostFound;
-          letterFinds.update(row[i].letter!, (value) => value + 1, ifAbsent: () => 1);
-        } else {
-          row[i].state = Status.notInWord;
+    if (game!.currentLetter == game!.word.length) {
+      var row = game!.wordGrid[game!.currentRow];
+      if (!_isWordValid(row.map((l) => l.letter).join())) {
+        showError("Ce mot n'existe pas ! 🤓 Essayez un autre mot.");
+        for (var i = 1; i < game!.wordGrid[game!.currentRow].length; i++) {
+          game!.wordGrid[game!.currentRow][i].state = LetterStatus.tofound;
+          game!.wordGrid[game!.currentRow][i].letter = null;
+          notifyListeners();
         }
-      }
-      if (row.map((r) => r.letter).join() == word) {
-        isWon = true;
-        isOver = true;
-      } else if (currentRow == wordGrid.length - 1) {
-        isOver = true;
+        game!.currentLetter = 1;
       } else {
-        currentRow++;
-        for (var element in wordGrid[currentRow]) {
-          element.state = Status.tofound;
+        Map<String, int> letterFinds = {};
+        for (var i = 0; i < row.length; i++) {
+          if (row[i].letter == game!.word[i]) {
+            row[i].state = LetterStatus.found;
+            letterFinds.update(row[i].letter!, (value) => value + 1, ifAbsent: () => 1);
+            for (var element in game!.wordGrid[game!.currentRow]) {
+              if (element.letter == row[i].letter && element.state == LetterStatus.almostFound) {
+                element.state = LetterStatus.notInWord;
+                break;
+              }
+            }
+          } else if (_isAlmostFound(row[i], letterFinds)) {
+            row[i].state = LetterStatus.almostFound;
+            letterFinds.update(row[i].letter!, (value) => value + 1, ifAbsent: () => 1);
+          } else {
+            row[i].state = LetterStatus.notInWord;
+          }
         }
-        var firstLetter = wordGrid[currentRow][0];
-        firstLetter.letter = word.characters.first;
-        firstLetter.state = Status.first;
-        currentLetter = 1;
+        if (row.map((r) => r.letter).join() == game!.word) {
+          game!.isWon = true;
+          game!.isOver = true;
+        } else if (game!.currentRow == game!.wordGrid.length - 1) {
+          game!.isOver = true;
+        } else {
+          game!.currentRow++;
+          for (var element in game!.wordGrid[game!.currentRow]) {
+            element.state = LetterStatus.tofound;
+          }
+          var firstLetter = game!.wordGrid[game!.currentRow][0];
+          firstLetter.letter = game!.word.characters.first;
+          firstLetter.state = LetterStatus.first;
+          game!.currentLetter = 1;
+        }
+        notifyListeners();
       }
-      notifyListeners();
     }
+  }
+
+  bool _isWordValid(wordTyped) {
+    return game!.acceptableWords.contains(wordTyped);
+  }
+
+  @override
+  void notifyListeners() async {
+    if (game != null) {
+      final prefs = await SharedPreferences.getInstance();
+      prefs.setString("game", jsonEncode(game!.toJson()));
+    }
+    super.notifyListeners();
   }
 
   bool _isAlmostFound(Letter letter, Map<String, int> letterFinds) {
     var numberSeeing = letterFinds[letter.letter!] ?? 0;
-    var numberInWord = word.characters.where((char) => char == letter.letter!).length;
-    return word.contains(letter.letter!) && numberSeeing < numberInWord;
+    var numberInWord = game!.word.characters.where((char) => char == letter.letter!).length;
+    return game!.word.contains(letter.letter!) && numberSeeing < numberInWord;
   }
 
-  GameStats getStatistique() {
-    return GameStats(word, currentRow + 1, wordGrid);
+  GameState getState() {
+    return game!;
   }
-}
 
-enum Status { first, typed, notInWord, almostFound, found, tofound, clear }
+  void showError(String error) {
+    error$.add(error);
+  }
 
-class Letter {
-  String? letter;
-  Status state;
-  Letter({Key? key, this.letter, required this.state});
+  Stream<String> get errorStream => error$.stream;
 }

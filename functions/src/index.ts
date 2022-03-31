@@ -1,7 +1,6 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
 import {words, wordsLength} from "./words";
-// import {createHmac} from "crypto";
 
 admin.initializeApp();
 
@@ -26,6 +25,18 @@ exports.getWord = functions.https.onCall(async () => {
   return docs.docs.map((d) => d.get("word"))[0];
 });
 
+exports.getAcceptableWords = functions.https.onCall(async () => {
+  const docs = await admin.firestore()
+      .collection("words")
+      .where("day", "==", getToday())
+      .get();
+  const todayWord = docs.docs.map((d) => d.get("word"))[0];
+  return words.filter(
+      (w) => w.charAt(0) === todayWord.charAt(0) &&
+      w.length === todayWord.length
+  );
+});
+
 const getWord = async () => {
   const lastMonthWords: string[] = (
     await admin.firestore()
@@ -37,9 +48,6 @@ const getWord = async () => {
   let word;
   do {
     word = words[Math.floor(Math.random() * wordsLength)];
-    // word = createHmac("sha256", "justToNotSpoilMe")
-    //    .update(word)
-    //    .digest("hex");
   } while (lastMonthWords.includes(word));
   return word;
 };

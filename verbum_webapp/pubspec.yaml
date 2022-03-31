@@ -32,6 +32,14 @@ dependencies:
   firebase_core: ^1.13.1
   cloud_functions: ^3.2.10
   provider: ^6.0.2
+  animations: ^2.0.2
+  shared_preferences: ^2.0.13
+  json_serializable: ^6.1.5
+  json_annotation: ^4.4.0
+  build_runner: ^2.1.8
+  another_flushbar: ^1.10.28
+  animated_text: ^1.0.2
+  cloud_firestore: ^3.1.11
 
 dev_dependencies:
   flutter_test:
